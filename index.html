@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>License Plate Management</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Live Stream</h1>
+    <video id="live-stream" controls autoplay width="600" height="400">
+		<img src="test.MOV" width="600" height="400">
+    </video>
+
+    <h2>Recognized Plates</h2>
+    <select id="recognized-plates"></select>
+
+    <h2>Manage Plates</h2>
+    <input type="text" id="plate-input" placeholder="Plate Number">
+    <select id="status-select">
+        <option value="Allowed">Allowed</option>
+        <option value="Blocked">Blocked</option>
+    </select>
+    <button onclick="addPlate()">Add</button>
+    <button onclick="updatePlate()">Update</button>
+    <button onclick="deletePlate()">Delete</button>
+
+    <h2>Database Records</h2>
+    <table border="1">
+        <thead>
+            <tr><th>Plate Number</th><th>Status</th></tr>
+        </thead>
+        <tbody id="plates-table"></tbody>
+    </table>
+
+    <script>
+        function fetchRecognizedPlates() {
+            $.get('/recognized_plates', function(data) {
+                let dropdown = $("#recognized-plates");
+                dropdown.empty();
+                data.forEach(plate => {
+                    dropdown.append(`<option value="${plate}">${plate}</option>`);
+                });
+            });
+        }
+
+        function fetchPlates() {
+            $.get('/get_plates', function(data) {
+                let table = $("#plates-table");
+                table.empty();
+                data.forEach(([plate_number, status]) => {
+                    table.append(`<tr><td>${plate_number}</td><td>${status}</td></tr>`);
+                });
+            });
+        }
+
+        function addPlate() {
+			let idPlates = $("#plate-input").val();
+			let status = $("#status-select").val();
+
+			$.ajax({
+				url: "/add_plate",
+				type: "POST",
+				contentType: "application/json",
+				data: JSON.stringify({ idPlates, status }),
+				success: fetchPlates,
+				error: function(xhr, status, error) {
+					console.error("Error adding plate:", xhr.responseText);
+				}
+			});
+		}
+
+
+
+        function updatePlate() {
+			let idPlates = $("#plate-input").val();
+			let status = $("#status-select").val();
+			$.ajax({
+				url: '/update_plate',
+				type: 'PUT',
+				contentType: "application/json",
+				data: JSON.stringify({idPlates, status}),
+				success: fetchPlates
+			});
+		}
+
+
+        function deletePlate() {
+			let idPlates = $("#plate-input").val();
+			$.ajax({
+				url: '/delete_plate',
+				type: 'DELETE',
+				contentType: "application/json",
+				data: JSON.stringify({idPlates}),
+				success: fetchPlates
+			});
+		}
+
+
+        setInterval(fetchRecognizedPlates, 5000);
+        fetchPlates();
+    </script>
+</body>
+</html>
